@@ -1,6 +1,7 @@
 const EPub = require("epub");
 const fs = require('fs');
 const elasticsearch = require('elasticsearch');
+const readline = require('readline');
 const {streamObject} = require('stream-json/streamers/StreamObject');
 const {parser} = require('stream-json');
 
@@ -24,21 +25,26 @@ fs.readdir(archiveDir, function(err, items) {
 
 function parseArchive(archiveName) {
 	fs.createReadStream(archiveDir+archiveName+"/index.json").pipe(parser()).pipe(streamObject()).on("data", function(object){
-	    getStoryData(archiveDir+archiveName+"/"+object.value.archive.path).then(function(storyObject){
-	    	object.value.story = storyObject;
-	    	client.index({
+		getStoryData(archiveDir+archiveName+"/"+object.value.archive.path).then(function(storyObject){
+			object.value.story = storyObject;
+			client.index({
 				index: archiveName,
 				id: object.value.id,
 				type: 'story',
 				body: object.value
-		    }, function(err, response) {
-		    	if(err) console.log("Index Error: " + err);
-		    	else console.log(object.value.title + " ("+object.value.id+") - Done")
-		    });
-	    }).catch(function(err){
+			}, function(err, response) {
+				if(err) console.log("Index Error: " + err);
+				else sll("> "+object.value.title + " (" + object.value.id + ") - Done");
+			});
+		}).catch(function(err){
 			console.log("Story Error: "+ err);
 		});
 	});
+}
+
+function sll(string) {
+	readline.cursorTo(process.stdout, 0);
+	process.stdout.write(string);
 }
 
 function getStoryData(storyDir) {
