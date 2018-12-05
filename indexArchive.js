@@ -12,16 +12,15 @@ const client = new elasticsearch.Client({
 const archiveDir = "./archives/";
 
 fs.readdir(archiveDir, function(err, items) {
-	items.forEach(function(item) {
-		fs.createReadStream(archiveDir+item+"/index.json").pipe(parser()).pipe(streamObject()).on("data", function(object){
+	items.forEach(function(archiveName) {
+		fs.createReadStream(archiveDir+archiveName+"/index.json").pipe(parser()).pipe(streamObject()).on("data", function(object){
 			/*client.index({
 		      index: 'fimfarchive-20181201',
 		      id: object.value.id,
 		      type: 'story',
 		      body: getStoryData(object.value)
 		    });*/
-		    console.log(archiveDir+item+"/"+object.value.archive.path)
-		    console.log(getStoryData(archiveDir+item+"/"+object.value.archive.path, object.value))
+		    console.log(getStoryData(archiveDir+archiveName+"/"+object.value.archive.path, object.value))
 		});
 	})
 });
