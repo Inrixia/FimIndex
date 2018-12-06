@@ -40,11 +40,10 @@ fs.readdir(archiveDir, function(err, items) {
 function parseArchive(archiveName) {
 	getExistingItems(archiveName).then(function(existingItems){
 		fs.createReadStream(archiveDir+archiveName+"/index.json").pipe(parser()).pipe(streamObject()).on("data", function(object){
-			if(!existingItems[object.value.id]){
+			if(existingItems[object.value.id]) process.stdout.write("Exists > "+object.value.id + " (" + object.value.title + ")\n");
+			else {
 				queued += 1;
 				indexObject(archiveName, object).then(function(){delete object;});
-			} else {
-				process.stdout.write("Exists > "+object.value.id + " (" + object.value.title + ")\n");
 			}
 		});
 	});
