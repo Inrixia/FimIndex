@@ -1,7 +1,5 @@
 const { fork } = require('child_process');
 const fs = require('graceful-fs');
-const realFs = require('fs');
-fs.gracefulify(realFs);
 const elasticsearch = require('elasticsearch');
 const {streamObject} = require('stream-json/streamers/StreamObject');
 const {parser} = require('stream-json');
@@ -15,6 +13,8 @@ const archiveDir = "./archives/";
 
 var liveChildren = 0;
 var maxChildren = 200;
+
+var trueIndex = 0;
 
 fs.readdir(archiveDir, function(err, items) {
 	items.forEach(function(archiveName) {
@@ -33,7 +33,8 @@ fs.readdir(archiveDir, function(err, items) {
 function parseArchive(archiveName) {
 	getExistingItems(archiveName).then(function(existingItems){
 		fs.createReadStream(archiveDir+archiveName+"/index.json").pipe(parser()).pipe(streamObject()).on("data", function(object){
-			if(existingItems[object.value.id]) process.stdout.write(liveChildren+" Running | Exists > "+object.value.id + " (" + object.value.title + ")\n");
+			trueIndex++;
+			if(existingItems[object.value.id]) process.stdout.write(liveChildren+" Running | Exists > "+trueIndex+ ' - "' + object.value.title + '" (' + object.value.id + ")\n");
 			else {
 				//var spawnChild = setInterval(function(){
 					//if (liveChildren < maxChildren) {
@@ -42,7 +43,7 @@ function parseArchive(archiveName) {
 				var parseDoc = fork('parseDocument.js');
 				parseDoc.send({archiveName: archiveName, archiveDir: archiveDir, object: object});
 				parseDoc.on('message', result => {
-					process.stdout.write(result);
+					process.stdout.write(liveChildren+" Running | Done "+result);
 				});
 				parseDoc.on('exit', code => {
 					liveChildren -= 1;
