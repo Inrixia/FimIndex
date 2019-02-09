@@ -1,0 +1,18 @@
+{
+  "_source": ["title"], 
+  "query": {
+    "match_phrase": {
+      "story.fullStoryText": { 
+        "query": "patreon",
+        "analyzer": "search_analis",
+        "slop": 0
+      }
+    }
+  },
+  "highlight": {
+    "fields": {
+      "story.fullStoryText": {}
+    }
+  },
+  "size": 10000
+}

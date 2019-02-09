@@ -1,0 +1,1 @@
+curl -X POST "http://localhost:9200/fimarchive/_search" -H "Content-Type: application/json" -d "@queryfile.json" > result.json

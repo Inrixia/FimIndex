@@ -12,7 +12,7 @@ const client = new elasticsearch.Client({
 const archiveDir = "./archives/";
 
 var liveChildren = 0;
-var maxChildren = 200;
+var maxChildren = 500;
 
 var trueIndex = 0;
 
@@ -30,26 +30,28 @@ fs.readdir(archiveDir, function(err, items) {
 	})
 });
 
+
+
 function parseArchive(archiveName) {
 	getExistingItems(archiveName).then(function(existingItems){
 		fs.createReadStream(archiveDir+archiveName+"/index.json").pipe(parser()).pipe(streamObject()).on("data", function(object){
 			trueIndex++;
 			if(existingItems[object.value.id]) process.stdout.write(liveChildren+" Running | Exists > "+trueIndex+ ' - "' + object.value.title + '" (' + object.value.id + ")\n");
 			else {
-				//var spawnChild = setInterval(function(){
-					//if (liveChildren < maxChildren) {
-				//clearInterval(spawnChild);
-				liveChildren += 1;
-				var parseDoc = fork('parseDocument.js');
-				parseDoc.send({archiveName: archiveName, archiveDir: archiveDir, object: object});
-				parseDoc.on('message', result => {
-					process.stdout.write(liveChildren+" Running | Done "+result);
-				});
-				parseDoc.on('exit', code => {
-					liveChildren -= 1;
-				});
-					//}
-				//}, 1000)
+				var spawnChild = setInterval(function(){
+					if (liveChildren < maxChildren) {
+						clearInterval(spawnChild);
+						liveChildren += 1;
+						var parseDoc = fork('parseDocument.js');
+						parseDoc.send({archiveName: archiveName, archiveDir: archiveDir, object: object});
+						parseDoc.on('message', result => {
+							process.stdout.write(liveChildren+" Running | Done "+result);
+						});
+						parseDoc.on('exit', code => {
+							liveChildren -= 1;
+						});
+					}
+				}, 1000)
 			}
 		});
 	});
