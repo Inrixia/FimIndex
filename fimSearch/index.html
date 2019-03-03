@@ -5,10 +5,12 @@
   </head>
   <body>
     <input id="search" type="text" onkeyup="search()">
-    <div id="result" class="featured_box"></div>
+    <ol id="result" class="story-card-list" style="max-height: none;">
+    </ol>
+
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://static.fimfiction.net/css/light.css">
+    <link rel="stylesheet" href="https://static.fimfiction.net/css/dark.css">
     <script>
 		var socket = io();
 
@@ -45,17 +47,57 @@
 				}
 			})
 			return string;
-			
 		}
 
 		$(function () {
-			socket.on('search_result', function(msg){
+			socket.on('search_result', function(results) {
 				$('#result').empty();
-				msg.forEach(function(fic) {
-					if(fic.cover_image != null)
-					{
-						$('#result').append('<div class="featured_story"><div class="title"><span class="content_rating_'+fic.content_rating+'">'+fic.content_rating.charAt(0).toUpperCase()+'</span><a href="'+fic.url+'">'+highlight(fic.title)+'</a></div><div class="description"><img class="story_image" src="'+fic.cover_image.medium+'" data-lightbox="" data-fullsize="'+fic.cover_image.full+'">'+highlight(fic.description_html)+'</div></div>');
-					}
+				results.hits.hits.forEach(function(fic) {
+                    console.log(fic)
+                    fic = fic._source;
+                    if(fic.cover_image == null) fic.cover_image = {full: "", medium: ""}
+                    var story_tags = `<ul class="story-tags">`;
+                    var story_card__tags = `<ul class="story-card__tags">`;
+                    fic.tags.forEach(function(tag) {
+                        story_tags += `<li>
+                            <a href="${tag.url}" class="tag-series" title="${tag.name}" data-tag-id="${tag.id}">${tag.name}</a>
+                        </li>`
+                        story_card__tags += `<li>
+                            <a href="${tag.url}" title="${tag.name}" class="tag-${tag.type}" data-tag-id="${tag.id}">${tag.name}</a>
+                        </li>`
+                    })
+                    story_tags += `</ul>`;
+                    story_card__tags += `</ul>`;
+                    $('#result').append(`
+                        <li>
+                            <div class="story-card-container">
+                                <div class="story-card">
+                                    <div class="story-card__title">
+                                        <span title="Rated ${fic.content_rating}" class="content_rating_${fic.content_rating}">T</span>
+                                        <a class="story_link" href="${fic.url}" title="${fic.title}">${fic.title}</a>
+                                    </div>
+                                    <div class="story-card-content" style="overflow:hidden;">
+                                        <div class="story-image">
+                                            <img class="story_image loaded" data-lightbox="" data-fullsize="${fic.cover_image.full}" src="${fic.cover_image.medium}" srcset="${fic.cover_image.medium} 2x">
+                                            <noscript><img src="${fic.cover_image.medium}" class="story_image" /></noscript>
+                                        </div>
+                                        <span class="short_description">
+                                            ${story_tags}
+                                            ${fic.short_description}
+                                            ${story_card__tags}    
+                                        </span>
+                                    </div>
+                                    <span class="story-card__info">
+                                        <a href="${fic.author.url}" class="story-card__author">${fic.author.name}</a>
+                                        <b>·</b>
+                                        ${fic.num_words} words
+                                        <b>·</b>
+                                        ${fic.num_views} views
+                                    </span>
+                                </div>
+                            </div>
+                        </li>
+                    `);
 				});
 			});
 		});
